@@ -16,4 +16,21 @@ api_urls:
       url: https://www.rug.nl/ggdc/historicaldevelopment/maddison/data/mpd2020.xlsx
       extension: xlsx
 
-data_dir: data
+data_dir:
+    root_dir: data
+    global_emissions: 
+        folder: global_emissions
+        file: global_emissions
+        extension: csv
+    pib: 
+        folder: pib
+        file: pib
+        extension: xlsx
+    population: 
+        folder: population
+        file: population
+        extension: csv
+    renewable_energy: 
+        folder: renewable_energy
+        file: renewable_energy
+        extension: xls
