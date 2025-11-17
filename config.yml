@@ -1,0 +1,19 @@
+api_urls:
+  - renewable_energy: 
+      name: renewable_energy
+      url: https://api.worldbank.org/v2/en/indicator/EG.ELC.RNEW.ZS?downloadformat=excel
+      extension: xls
+  - population:
+      name: population
+      url: https://www.kaggle.com/api/v1/datasets/download/iamsouravbanerjee/world-population-dataset
+      extension: zip
+  - global_emissions:
+      name: global_emissions
+      url: https://www.kaggle.com/api/v1/datasets/download/unitednations/international-greenhouse-gas-emissions
+      extension: zip
+  - pib:
+      name: pib
+      url: https://www.rug.nl/ggdc/historicaldevelopment/maddison/data/mpd2020.xlsx
+      extension: xlsx
+
+data_dir: data
