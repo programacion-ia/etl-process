@@ -1,3 +1,9 @@
+data_sources:
+    - global_emissions
+    - pib
+    - population
+    - renewable_energy
+
 api_urls:
   - renewable_energy: 
       name: renewable_energy
