@@ -5,6 +5,7 @@ import pandas as pd
 from src.parsers import YamlParser
 from src.extractors import CsvExtractor, ExcelExtractor
 from src.utils import generate_file_path
+from src.tranformers import EnergyTransformer, PopulationTransformer
 
 YAML_FILE = 'config.yml'
 
@@ -49,4 +50,10 @@ if __name__ == "__main__":
     # Extract
     emissions_df, pib_df, population_df, energy_df = extract(config)
 
+    # Tranform
+    population_tranformer = PopulationTransformer(population_df)
+    population_df = population_tranformer.transform()
+    
+    energy_tranformer = EnergyTransformer(energy_df, population_df)
+    energy_df = energy_tranformer.transform()
     a=0
