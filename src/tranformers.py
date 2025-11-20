@@ -95,7 +95,15 @@ class EmissionsTransformer(BaseTransformer):
         self.df.drop(labels='country_or_area', axis=1, inplace=True)
 
     def __rename_columns(self):
-        self.df.rename(columns={'year': 'Year'}, inplace=True)
+        emission_mapper = {'year': 'Year',
+                          'carbon_dioxide_co2_emissions_without_land_use_land_use_change_and_forestry_lulucf_in_kilotonne_co2_equivalent': 'co2', 
+                          'greenhouse_gas_ghgs_emissions_including_indirect_co2_without_lulucf_in_kilotonne_co2_equivalent': 'ghg_no_co2', 
+                          'greenhouse_gas_ghgs_emissions_without_land_use_land_use_change_and_forestry_lulucf_in_kilotonne_co2_equivalent': 'ghg_co2', 
+                          'hydrofluorocarbons_hfcs_emissions_in_kilotonne_co2_equivalent': 'hfcs', 
+                          'methane_ch4_emissions_without_land_use_land_use_change_and_forestry_lulucf_in_kilotonne_co2_equivalent': 'ch4', 
+                          'nitrous_oxide_n2o_emissions_without_land_use_land_use_change_and_forestry_lulucf_in_kilotonne_co2_equivalent': 'n2o', 
+                          'sulphur_hexafluoride_sf6_emissions_in_kilotonne_co2_equivalent': 'sf6'}
+        self.df.rename(columns=emission_mapper, inplace=True)
 
 class PibTransformer(BaseTransformer):
     def __init__(self, df: pd.DataFrame):
@@ -156,4 +164,4 @@ class MergeTransformer(BaseTransformer):
                                                     'Population', 
                                                     'pib']):
         ordered_columns = [c for c in first_columns if c in self.merged_df.columns] + [c for c in self.merged_df.columns if c not in first_columns]
-        self.merged_df = self.merged_df[ordered_columns]
+        self.merged_df = self.merged_df[ordered_columns]        
