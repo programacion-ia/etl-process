@@ -40,3 +40,7 @@ data_dir:
         folder: renewable_energy
         file: renewable_energy
         extension: xls
+
+outputs:
+    database: output/etl_output.db
+    csv: output/etl_output.csv
