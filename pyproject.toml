@@ -9,5 +9,6 @@ dependencies = [
     "pandas>=2.3.3",
     "pyyaml>=6.0.3",
     "requests>=2.32.5",
+    "sqlalchemy>=2.0.44",
     "xlrd>=2.0.2",
 ]

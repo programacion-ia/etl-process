@@ -4,8 +4,9 @@ import pandas as pd
 
 from src.parsers import YamlParser
 from src.extractors import CsvExtractor, ExcelExtractor
-from src.utils import generate_file_path
+from src.utils import generate_file_path, ensure_data_directory
 from src.tranformers import EnergyTransformer, PopulationTransformer, EmissionsTransformer, PibTransformer, MergeTransformer, AggregateTransformer
+from src.loaders import SqliteLoader
 
 YAML_FILE = 'config.yml'
 
@@ -78,6 +79,17 @@ def transform(emissions_df: pd.DataFrame,
     aggregated_transformer = AggregateTransformer(merged_df)
     return aggregated_transformer.transform()
 
+def load(config: dict,
+         countries_df: pd.DataFrame, 
+         continents_df: pd.DataFrame):
+    db_root_path = Path.cwd() / config['data_dir']['root_dir'] /config['data_dir']['outputs']['root']
+    ensure_data_directory(db_root_path)
+    db_path = db_root_path / config['data_dir']['outputs']['database']
+
+    sqlite_loader = SqliteLoader(db_path)
+    sqlite_loader.load(countries_df, 'countries')
+    sqlite_loader.load(continents_df, 'continents')
+
 
 if __name__ == "__main__":
     yaml_parser = YamlParser()
@@ -88,4 +100,7 @@ if __name__ == "__main__":
 
     # Transform
     countries_df, continents_df = transform(emissions_df, pib_df, population_df, energy_df)
+
+    # Load
+    load(config, countries_df, continents_df)
     a=0
