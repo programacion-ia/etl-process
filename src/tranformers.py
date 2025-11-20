@@ -30,6 +30,7 @@ class EnergyTransformer(BaseTransformer):
         self.__transpose_df()
         # self.__add_population_column()
         self.__delete_na_rows()
+        self.__cast_year_to_int()
         # self.__calculate_per_capita_energy()
         # self.__calculate_mean_parameters()
         return self.df
@@ -61,6 +62,8 @@ class EnergyTransformer(BaseTransformer):
     def __calculate_mean_parameters(self):
         self.df = self.df.groupby(['Country Code', 'Country Name'], as_index=False).agg({'Energy': 'mean', 'Energy per Capita': 'mean'})
 
+    def __cast_year_to_int(self):
+        self.df['Year'] = self.df['Year'].astype(int)
 class EmissionsTransformer(BaseTransformer):
     def __init__(self, df: pd.DataFrame, population_df: pd.DataFrame):
         self.df: pd.DataFrame = df
@@ -70,6 +73,7 @@ class EmissionsTransformer(BaseTransformer):
         self.__pivot_df()
         self.__drop_na_columns()
         self.__add_country_codes()
+        self.__rename_columns()
         return self.df
     
     def __pivot_df(self):
@@ -89,3 +93,67 @@ class EmissionsTransformer(BaseTransformer):
     def __order_columns(self, columns: list[str]):
         self.df = self.df[columns]
         self.df.drop(labels='country_or_area', axis=1, inplace=True)
+
+    def __rename_columns(self):
+        self.df.rename(columns={'year': 'Year'}, inplace=True)
+
+class PibTransformer(BaseTransformer):
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+
+    def transform(self) -> pd.DataFrame:
+        self.__filter_columns()
+        self.__filter_dates()
+        self.__rename_columns()
+        return self.df
+    
+    def __filter_columns(self):
+        self.df.drop(labels='pop', axis=1, inplace=True)
+
+    def __filter_dates(self, start_year: int = 1990, end_year: int = 2014):
+        self.df = self.df[(self.df['year'] >= start_year) & (self.df['year'] <= end_year)]
+
+    def __rename_columns(self):
+        self.df.rename(columns={'countrycode': 'Country Code', 'country':  'Country Name', 'year': 'Year', 'gdppc': 'pib'}, inplace=True)
+
+
+class MergeTransformer(BaseTransformer):
+    def __init__(self, energy_df: pd.DataFrame, emissions_df: pd.DataFrame, pib_df: pd.DataFrame, population_df: pd.DataFrame):
+        self.energy_df = energy_df
+        self.emissions_df = emissions_df
+        self.pib_df = pib_df
+        self.population_df = population_df
+
+    def transform(self) -> pd.DataFrame:
+        self.__merge_energy_emissions()
+        self.__merge_pib()
+        self.__merge_population()
+        self.__order_columns()
+        return self.merged_df
+    
+    def __merge_energy_emissions(self):
+        self.merged_df = pd.merge(self.energy_df, self.emissions_df, how='inner', left_on=['Country Code'], right_on=['Country Code'], suffixes=(None, '_y'))
+        self.__delete_redundant_columns()
+
+    def __delete_redundant_columns(self):
+        cols_to_drop = [c for c in self.merged_df.columns if isinstance(c, str) and c.endswith('_y')]
+        if cols_to_drop:
+            self.merged_df.drop(columns=cols_to_drop, inplace=True)
+
+    def __merge_pib(self):
+        self.merged_df = pd.merge(self.merged_df, self.pib_df, how='inner', left_on=['Country Code'], right_on=['Country Code'], suffixes=(None, '_y'))
+        self.__delete_redundant_columns()
+
+    def __merge_population(self):
+        self.merged_df = pd.merge(self.merged_df, self.population_df, how='inner', left_on=['Country Code'], right_on=['Country Code'], suffixes=(None, '_y'))
+        self.__delete_redundant_columns()
+
+    def __order_columns(self, 
+                        first_columns: list[str] = ['Country Code', 
+                                                    'Country Name', 
+                                                    'Continent', 
+                                                    'Year', 
+                                                    'Population', 
+                                                    'pib']):
+        ordered_columns = [c for c in first_columns if c in self.merged_df.columns] + [c for c in self.merged_df.columns if c not in first_columns]
+        self.merged_df = self.merged_df[ordered_columns]

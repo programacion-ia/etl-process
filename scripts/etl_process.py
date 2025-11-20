@@ -5,7 +5,7 @@ import pandas as pd
 from src.parsers import YamlParser
 from src.extractors import CsvExtractor, ExcelExtractor
 from src.utils import generate_file_path
-from src.tranformers import EnergyTransformer, PopulationTransformer, EmissionsTransformer
+from src.tranformers import EnergyTransformer, PopulationTransformer, EmissionsTransformer, PibTransformer, MergeTransformer
 
 YAML_FILE = 'config.yml'
 
@@ -59,4 +59,11 @@ if __name__ == "__main__":
 
     emissions_transformer = EmissionsTransformer(emissions_df, population_df)
     emissions_df = emissions_transformer.transform()
+
+    pib_transformer = PibTransformer(pib_df)
+    pib_df = pib_transformer.transform()
+    
+    # Merge
+    merge_tranformer = MergeTransformer(energy_df, emissions_df, pib_df, population_df)
+    merged_df = merge_tranformer.transform()
     a=0
