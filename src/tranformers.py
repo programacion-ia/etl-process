@@ -25,7 +25,7 @@ class EnergyTransformer(BaseTransformer):
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
-    def transform(self):
+    def transform(self) -> pd.DataFrame:
         self.__select_columns()
         self.__transpose_df()
         # self.__add_population_column()
@@ -39,15 +39,13 @@ class EnergyTransformer(BaseTransformer):
         self.df = self.df[columns]
     
     @staticmethod
-    def __generate_columns():
-        init = 1990
-        end = 2014
+    def __generate_columns(init: int = 1990, end: int = 2014) -> list[str]:
         dates = [str(year) for year in range(init, end + 1)]
-        columns = ['Country Name', 'Country Code'] + dates
+        columns = ['Country Code', 'Country Name'] + dates
         return columns
     
     def __transpose_df(self):
-        self.df = self.df.melt(id_vars=['Country Name', 'Country Code'], var_name='Year', value_name='Energy')
+        self.df = self.df.melt(id_vars=['Country Code', 'Country Name'], var_name='Year', value_name='Energy')
 
     def __delete_na_rows(self):
         self.df = self.df.dropna(subset=['Energy'])
@@ -68,7 +66,7 @@ class EmissionsTransformer(BaseTransformer):
         self.df: pd.DataFrame = df
         self.population_df = population_df
 
-    def transform(self):
+    def transform(self) -> pd.DataFrame:
         self.__pivot_df()
         self.__drop_na_columns()
         self.__add_country_codes()
