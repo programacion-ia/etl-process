@@ -72,6 +72,7 @@ class EmissionsTransformer(BaseTransformer):
     def transform(self) -> pd.DataFrame:
         self.__pivot_df()
         self.__drop_na_columns()
+        self.__drop_na_rows()
         self.__add_country_codes()
         self.__rename_columns()
         return self.df
@@ -84,6 +85,9 @@ class EmissionsTransformer(BaseTransformer):
         cols_to_drop = na_counts[na_counts > na_threshold].index.tolist()
         if cols_to_drop:
             self.df = self.df.drop(columns=cols_to_drop)
+    
+    def __drop_na_rows(self):
+        self.df = self.df.dropna(subset=['country_or_area'])
 
     def __add_country_codes(self):
         columns = ['Country Code', 'Country Name'] + self.df.columns.tolist()
@@ -133,28 +137,21 @@ class MergeTransformer(BaseTransformer):
         self.population_df = population_df
 
     def transform(self) -> pd.DataFrame:
-        self.__merge_energy_emissions()
+        self.__merge_energy_emissions() # Revisar NAs
         self.__merge_pib()
         self.__merge_population()
         self.__order_columns()
+        self.__apply_per_capita_stats()
         return self.merged_df
     
     def __merge_energy_emissions(self):
-        self.merged_df = pd.merge(self.energy_df, self.emissions_df, how='inner', left_on=['Country Code'], right_on=['Country Code'], suffixes=(None, '_y'))
-        self.__delete_redundant_columns()
-
-    def __delete_redundant_columns(self):
-        cols_to_drop = [c for c in self.merged_df.columns if isinstance(c, str) and c.endswith('_y')]
-        if cols_to_drop:
-            self.merged_df.drop(columns=cols_to_drop, inplace=True)
+        self.merged_df = pd.merge(self.energy_df, self.emissions_df, how='inner', left_on=['Country Code', 'Country Name', 'Year'], right_on=['Country Code', 'Country Name', 'Year'])
 
     def __merge_pib(self):
-        self.merged_df = pd.merge(self.merged_df, self.pib_df, how='inner', left_on=['Country Code'], right_on=['Country Code'], suffixes=(None, '_y'))
-        self.__delete_redundant_columns()
+        self.merged_df = pd.merge(self.merged_df, self.pib_df, how='inner', left_on=['Country Code', 'Country Name', 'Year'], right_on=['Country Code', 'Country Name', 'Year'])
 
     def __merge_population(self):
-        self.merged_df = pd.merge(self.merged_df, self.population_df, how='inner', left_on=['Country Code'], right_on=['Country Code'], suffixes=(None, '_y'))
-        self.__delete_redundant_columns()
+        self.merged_df = pd.merge(self.merged_df, self.population_df, how='inner', left_on=['Country Code', 'Country Name'], right_on=['Country Code', 'Country Name'])
 
     def __order_columns(self, 
                         first_columns: list[str] = ['Country Code', 
@@ -164,4 +161,40 @@ class MergeTransformer(BaseTransformer):
                                                     'Population', 
                                                     'pib']):
         ordered_columns = [c for c in first_columns if c in self.merged_df.columns] + [c for c in self.merged_df.columns if c not in first_columns]
-        self.merged_df = self.merged_df[ordered_columns]        
+        self.merged_df = self.merged_df[ordered_columns]
+
+    def __apply_per_capita_stats(self, 
+                                 first_columns: list[str] = ['Country Code', 
+                                                            'Country Name', 
+                                                            'Continent', 
+                                                            'Year', 
+                                                            'Population', 
+                                                            'pib']):
+        per_capita_columns = [col for col in self.merged_df.columns if col not in first_columns]
+        self.merged_df[[f'{col} per Capita' for col in per_capita_columns]] = self.merged_df[per_capita_columns].div(self.merged_df['Population'], axis=0)
+
+class AggregateTransformer(BaseTransformer):
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+
+    def transform(self) -> pd.DataFrame:
+        self.__aggregate_by_country()
+        self.__aggregate_by_continent()
+        return self.country_df, self.continent_df
+    
+    def __aggregate_by_country(self, not_values_columns: list[str] = ['Country Code', 
+                                                                      'Country Name', 
+                                                                      'Continent', 
+                                                                      'Year', 
+                                                                      'Population']):
+        
+        aggregate_operations = {col: 'mean' for col in self.df.columns if col not in not_values_columns}
+        self.country_df = self.df.groupby(['Country Code', 'Country Name', 'Continent'], as_index=False).agg(aggregate_operations)
+
+    def __aggregate_by_continent(self, not_values_columns: list[str] = ['Country Code', 
+                                                                        'Country Name', 
+                                                                        'Continent', 
+                                                                        'Year', 
+                                                                        'Population']):
+        aggregate_operations = {col: 'mean' for col in self.df.columns if col not in not_values_columns}
+        self.continent_df = self.df.groupby(['Continent'], as_index=False).agg(aggregate_operations)
