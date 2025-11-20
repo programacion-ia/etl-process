@@ -16,9 +16,9 @@ class PopulationTransformer(BaseTransformer):
         return self.df
     
     def select_columns(self):
-        columns = ['CCA3', '2010 Population']
+        columns = ['CCA3', 'Country/Territory', 'Continent', '2010 Population']
         self.df = self.df[columns]
-        self.df.rename(columns={'CCA3': 'Country Code', '2010 Population': 'Population'}, inplace=True)
+        self.df.rename(columns={'CCA3': 'Country Code','Country/Territory': 'Country Name', '2010 Population': 'Population'}, inplace=True)
 
 class EnergyTransformer(BaseTransformer):
     
@@ -50,7 +50,7 @@ class EnergyTransformer(BaseTransformer):
         self.df = self.df.melt(id_vars=['Country Name', 'Country Code'], var_name='Year', value_name='Energy')
 
     def __delete_na_rows(self):
-        self.df = self.df.dropna(subset=['Energy', 'Population'])
+        self.df = self.df.dropna(subset=['Energy'])
     
     def __add_population_column(self):
         merged_df = pd.merge(self.df, self.population_df, how='left', left_on=['Country Code'], right_on=['Country Code'])
@@ -62,3 +62,32 @@ class EnergyTransformer(BaseTransformer):
     
     def __calculate_mean_parameters(self):
         self.df = self.df.groupby(['Country Code', 'Country Name'], as_index=False).agg({'Energy': 'mean', 'Energy per Capita': 'mean'})
+
+class EmissionsTransformer(BaseTransformer):
+    def __init__(self, df: pd.DataFrame, population_df: pd.DataFrame):
+        self.df: pd.DataFrame = df
+        self.population_df = population_df
+
+    def transform(self):
+        self.__pivot_df()
+        self.__drop_na_columns()
+        self.__add_country_codes()
+        return self.df
+    
+    def __pivot_df(self):
+        self.df = self.df.pivot(columns='category', values='value', index=['country_or_area', 'year']).reset_index()
+        
+    def __drop_na_columns(self, na_threshold: int = 200):
+        na_counts = self.df.isna().sum()
+        cols_to_drop = na_counts[na_counts > na_threshold].index.tolist()
+        if cols_to_drop:
+            self.df = self.df.drop(columns=cols_to_drop)
+
+    def __add_country_codes(self):
+        columns = ['Country Code', 'Country Name'] + self.df.columns.tolist()
+        self.df = pd.merge(self.df, self.population_df[['Country Code', 'Country Name']], how='left', left_on=['country_or_area'], right_on=['Country Name'])
+        self.__order_columns(columns)
+
+    def __order_columns(self, columns: list[str]):
+        self.df = self.df[columns]
+        self.df.drop(labels='country_or_area', axis=1, inplace=True)

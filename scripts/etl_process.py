@@ -57,6 +57,6 @@ if __name__ == "__main__":
     energy_tranformer = EnergyTransformer(energy_df)
     energy_df = energy_tranformer.transform()
 
-    emissions_transformer = EmissionsTransformer(emissions_df)
+    emissions_transformer = EmissionsTransformer(emissions_df, population_df)
     emissions_df = emissions_transformer.transform()
     a=0
