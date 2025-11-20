@@ -22,9 +22,8 @@ class PopulationTransformer(BaseTransformer):
 
 class EnergyTransformer(BaseTransformer):
     
-    def __init__(self, df: pd.DataFrame, population_df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame):
         self.df = df
-        self.population_df = population_df
 
     def transform(self):
         self.__select_columns()
