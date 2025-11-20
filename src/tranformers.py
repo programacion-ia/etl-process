@@ -180,7 +180,7 @@ class AggregateTransformer(BaseTransformer):
     def transform(self) -> pd.DataFrame:
         self.__aggregate_by_country()
         self.__aggregate_by_continent()
-        return self.country_df, self.continent_df
+        return self.countries_df, self.continents_df
     
     def __aggregate_by_country(self, not_values_columns: list[str] = ['Country Code', 
                                                                       'Country Name', 
@@ -189,7 +189,7 @@ class AggregateTransformer(BaseTransformer):
                                                                       'Population']):
         
         aggregate_operations = {col: 'mean' for col in self.df.columns if col not in not_values_columns}
-        self.country_df = self.df.groupby(['Country Code', 'Country Name', 'Continent'], as_index=False).agg(aggregate_operations)
+        self.countries_df = self.df.groupby(['Country Code', 'Country Name', 'Continent'], as_index=False).agg(aggregate_operations)
 
     def __aggregate_by_continent(self, not_values_columns: list[str] = ['Country Code', 
                                                                         'Country Name', 
@@ -197,4 +197,4 @@ class AggregateTransformer(BaseTransformer):
                                                                         'Year', 
                                                                         'Population']):
         aggregate_operations = {col: 'mean' for col in self.df.columns if col not in not_values_columns}
-        self.continent_df = self.df.groupby(['Continent'], as_index=False).agg(aggregate_operations)
+        self.continents_df = self.df.groupby(['Continent'], as_index=False).agg(aggregate_operations)
