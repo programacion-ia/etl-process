@@ -5,7 +5,7 @@ import pandas as pd
 from src.parsers import YamlParser
 from src.extractors import CsvExtractor, ExcelExtractor
 from src.utils import generate_file_path
-from src.tranformers import EnergyTransformer, PopulationTransformer, EmissionsTransformer, PibTransformer, MergeTransformer
+from src.tranformers import EnergyTransformer, PopulationTransformer, EmissionsTransformer, PibTransformer, MergeTransformer, AggregateTransformer
 
 YAML_FILE = 'config.yml'
 
@@ -42,15 +42,22 @@ def extract(config: dict) -> tuple[pd.DataFrame]:
     
     return dataframes['global_emissions'], dataframes['pib'], dataframes['population'], dataframes['renewable_energy']
 
+def transform(emissions_df: pd.DataFrame, 
+              pib_df: pd.DataFrame, 
+              population_df: pd.DataFrame, 
+              energy_df: pd.DataFrame
+              ) -> list[pd.DataFrame]:
+    """Transform input dataframes in order to obtain aggregated dataframes for countries and continents
 
-if __name__ == "__main__":
-    yaml_parser = YamlParser()
-    config = yaml_parser.load_yaml(YAML_FILE)
+    Args:
+        emissions_df (pd.DataFrame): Global emissions data
+        pib_df (pd.DataFrame): Pib per capita per country
+        population_df (pd.DataFrame): Population stats
+        energy_df (pd.DataFrame): Produced electricity per country
 
-    # Extract
-    emissions_df, pib_df, population_df, energy_df = extract(config)
-
-    # Tranform
+    Returns:
+        list[pd.DataFrame]: Aggregated dataframes with mean values for countries and continents
+    """
     population_tranformer = PopulationTransformer(population_df)
     population_df = population_tranformer.transform()
 
@@ -66,4 +73,19 @@ if __name__ == "__main__":
     # Merge
     merge_tranformer = MergeTransformer(energy_df, emissions_df, pib_df, population_df)
     merged_df = merge_tranformer.transform()
+
+    # Aggregated values
+    aggregated_transformer = AggregateTransformer(merged_df)
+    return aggregated_transformer.transform()
+
+
+if __name__ == "__main__":
+    yaml_parser = YamlParser()
+    config = yaml_parser.load_yaml(YAML_FILE)
+
+    # Extract
+    emissions_df, pib_df, population_df, energy_df = extract(config)
+
+    # Transform
+    countries_df, continents_df = transform(emissions_df, pib_df, population_df, energy_df)
     a=0
