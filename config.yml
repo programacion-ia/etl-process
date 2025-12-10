@@ -22,6 +22,20 @@ api_urls:
       url: https://www.rug.nl/ggdc/historicaldevelopment/maddison/data/mpd2020.xlsx
       extension: xlsx
 
+download:
+    renewable_energy: 
+        url: https://api.worldbank.org/v2/en/indicator/EG.ELC.RNEW.ZS?downloadformat=excel
+        path: data/renewable_energy/renewable_energy.xls
+    population:
+        url: https://www.kaggle.com/api/v1/datasets/download/iamsouravbanerjee/world-population-dataset
+        path: data/population/population.zip
+    global_emissions:
+        url: https://www.kaggle.com/api/v1/datasets/download/unitednations/international-greenhouse-gas-emissions
+        path: data/global_emissions/global_emissions.zip
+    pib:
+      url: https://www.rug.nl/ggdc/historicaldevelopment/maddison/data/mpd2020.xlsx
+      path: data/pib/pib.xlsx
+
 data_dir:
     root_dir: data
     global_emissions: 
@@ -44,4 +58,6 @@ data_dir:
     outputs:
         root: output
         database: etl_output.db
-        csv: etl_output.csv
+        csv: 
+            countries: countries.csv
+            continents: continents.csv

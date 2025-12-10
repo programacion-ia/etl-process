@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from sqlalchemy import create_engine
 import pandas as pd
 
 
@@ -44,3 +45,22 @@ class CsvExtractor(BaseExtractor):
             pd.DataFrame: File DataFrame
         """
         return pd.read_csv(file_path)
+    
+
+class SqliteExtractor(BaseExtractor):
+    """Extracts data from SQLite database files."""
+
+    def __init__(self, db_path: str | Path):
+        self.engine = create_engine(f'sqlite:///{db_path}')
+
+    def extract(self, query: str) -> pd.DataFrame:
+        """Extract from table
+
+        Args:
+            query (str): Query to be exectuted
+
+        Returns:
+            pd.DataFrame: Recovered Data
+        """
+        with self.engine.connect() as connection:
+            return pd.read_sql_query(query, connection)

@@ -16,3 +16,7 @@ class SqliteLoader(BaseLoader):
 
     def load(self, df: pd.DataFrame, table_name: str):
         df.to_sql(table_name, self.engine, index=False, if_exists='replace')
+
+class CsvLoader(BaseLoader):
+    def load(self, df: pd.DataFrame, file_path: str | Path):
+        df.to_csv(file_path, index=False)

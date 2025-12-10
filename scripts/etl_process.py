@@ -4,22 +4,11 @@ import pandas as pd
 
 from src.parsers import YamlParser
 from src.extractors import CsvExtractor, ExcelExtractor
-from src.utils import generate_file_path, ensure_data_directory
+from src.utils import generate_file_path, generate_output_path
 from src.tranformers import EnergyTransformer, PopulationTransformer, EmissionsTransformer, PibTransformer, MergeTransformer, AggregateTransformer
 from src.loaders import SqliteLoader
 
 YAML_FILE = 'config.yml'
-
-def create_source_variable(source: str, extractor: CsvExtractor | ExcelExtractor, file_path: str | Path) -> pd.DataFrame:
-    """Dynamic creation of source dataframe from filepath.
-
-    Args:
-        source (str): Source name
-        extractor (CsvExtractor | ExcelExtractor): Extractor to be used
-        file_path (str | Path): Path to file to be loaded.
-    """
-    vars().update({f"{source}_df": extractor.extract(file_path)})
-    return locals()[f"{source}_df"]
 
 def extract(config: dict) -> tuple[pd.DataFrame]:
     """Extract data for all sources defined in the config.
@@ -28,20 +17,24 @@ def extract(config: dict) -> tuple[pd.DataFrame]:
         config (dict): Configuration dictionary.
     """
     data_sources = config['data_sources']
-    csv_extractor = CsvExtractor()
-    dataframes = {}
     for source in data_sources:
-        data_info = config['data_dir'][source]
         file_path = generate_file_path(config, source)
         
-        if data_info['extension'] == 'csv':
-            dataframes[source] = create_source_variable(source, csv_extractor, file_path)
+        match source:
+            case 'global_emissions':
+                csv_extractor = CsvExtractor()
+                emissions_df = csv_extractor.extract(file_path)
+            case 'population':
+                csv_extractor = CsvExtractor()
+                population_df = csv_extractor.extract(file_path)
+            case 'pib':
+                excel_extractor = ExcelExtractor(source)
+                pib_df = excel_extractor.extract(file_path)
+            case 'renewable_energy':
+                excel_extractor = ExcelExtractor(source)
+                energy_df = excel_extractor.extract(file_path)
         
-        elif data_info['extension'] in ['xls', 'xlsx']:
-            excel_extractor = ExcelExtractor(source)
-            dataframes[source] = create_source_variable(source, excel_extractor, file_path)
-    
-    return dataframes['global_emissions'], dataframes['pib'], dataframes['population'], dataframes['renewable_energy']
+    return emissions_df, pib_df, population_df, energy_df
 
 def transform(emissions_df: pd.DataFrame, 
               pib_df: pd.DataFrame, 
@@ -82,9 +75,7 @@ def transform(emissions_df: pd.DataFrame,
 def load(config: dict,
          countries_df: pd.DataFrame, 
          continents_df: pd.DataFrame):
-    db_root_path = Path.cwd() / config['data_dir']['root_dir'] /config['data_dir']['outputs']['root']
-    ensure_data_directory(db_root_path)
-    db_path = db_root_path / config['data_dir']['outputs']['database']
+    db_path = generate_output_path(config, 'db')
 
     sqlite_loader = SqliteLoader(db_path)
     sqlite_loader.load(countries_df, 'countries')
@@ -103,4 +94,3 @@ if __name__ == "__main__":
 
     # Load
     load(config, countries_df, continents_df)
-    a=0
